@@ -1,0 +1,153 @@
+/* WooCommerce Print Documents - Admin Styles */
+
+.wcp-meta-box {
+    padding: 5px 0;
+}
+
+.wcp-document-btn {
+    margin-bottom: 8px;
+    display: flex;
+    gap: 5px;
+}
+
+.wcp-document-btn .button {
+    flex: 1;
+}
+
+.wcp-doc-links .button {
+    padding: 0 8px !important;
+    height: 24px !important;
+    line-height: 22px !important;
+    margin-right: 2px !important;
+}
+
+/* Settings page styles */
+.wcp-settings-wrap {
+    max-width: 800px;
+}
+
+.wcp-settings-wrap h2 {
+    margin-top: 30px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.wcp-document-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.wcp-document-row label {
+    flex: 1;
+}
+
+.wcp-preview-modal {
+    display: none;
+    position: fixed;
+    z-index: 99999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.wcp-preview-modal.active {
+    display: block;
+}
+
+.wcp-preview-content {
+    background: #fff;
+    margin: 5% auto;
+    padding: 20px;
+    width: 90%;
+    max-width: 900px;
+    border-radius: 8px;
+    max-height: 90vh;
+    overflow: auto;
+}
+
+.wcp-preview-close {
+    float: right;
+    cursor: pointer;
+    font-size: 28px;
+    line-height: 1;
+    color: #666;
+}
+
+.wcp-preview-close:hover {
+    color: #333;
+}
+
+/* Admin columns */
+.column-wcp_documents {
+    width: 100px;
+}
+
+/* Preview button styles */
+.wcp-preview-btn {
+    color: #0073aa;
+    text-decoration: none;
+}
+
+/* Document status indicators */
+.wcp-status-active {
+    color: #00a32a;
+}
+
+.wcp-status-inactive {
+    color: #ccc;
+}
+
+/* Bulk actions */
+.wcp-bulk-actions {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 4px;
+}
+
+.wcp-bulk-actions h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+/* Form styles */
+.form-table th {
+    padding: 20px 0 20px 10px;
+}
+
+.form-table td {
+    padding: 15px 10px;
+}
+
+.form-table input[type="text"],
+.form-table input[type="number"],
+.form-table input[type="email"],
+.form-table textarea,
+.form-table select {
+    width: 100%;
+    max-width: 400px;
+}
+
+/* Document type icons */
+.wcp-doc-icon {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background: #0073aa;
+    color: #fff;
+    border-radius: 3px;
+    text-align: center;
+    line-height: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+/* Print buttons on order edit page */
+.order_actions_div .wcp-document-btn {
+    margin-top: 10px;
+}
