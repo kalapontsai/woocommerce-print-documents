@@ -95,7 +95,7 @@ class WC_Print_Admin {
 
         $documents = get_option( 'wcp_documents', array() );
         $documents_enabled = array_filter( $documents, function( $doc ) {
-            return isset( $doc['active'] ) && 'yes' === $doc['active'];
+            return isset( $doc['active'] ) && $doc['active'];
         } );
 
         if ( empty( $documents_enabled ) ) {
@@ -205,7 +205,7 @@ class WC_Print_Admin {
 
         $documents = get_option( 'wcp_documents', array() );
         $documents_enabled = array_filter( $documents, function( $doc ) {
-            return isset( $doc['active'] ) && 'yes' === $doc['active'];
+            return isset( $doc['active'] ) && $doc['active'];
         } );
 
         echo '<div class="wcp-doc-links">';
