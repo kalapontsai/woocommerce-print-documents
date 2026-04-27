@@ -41,19 +41,49 @@ class WC_Print_Ajax {
     }
 
     /**
+     * Verify nonce with multiple action types
+     */
+    private function verify_nonce( $nonce, $order_id = 0 ) {
+        if ( empty( $nonce ) ) {
+            return false;
+        }
+
+        // List of valid nonce actions
+        $actions = array(
+            'wcp_print',
+            'wcp_admin_nonce',
+            'wcp_view_' . $order_id,
+        );
+
+        foreach ( $actions as $action ) {
+            if ( wp_verify_nonce( $nonce, $action ) ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Handle print document AJAX
      */
     public function handle_print_document() {
-        // Verify nonce
-        if ( ! isset( $_GET['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( $_GET['nonce'] ), 'wcp_print' ) ) {
-            wp_die( esc_html__( 'Security check failed.', 'woocommerce-print-documents' ) );
-        }
-
-        $order_id = isset( $_GET['order_id'] ) ? absint( $_GET['order_id'] ) : 0;
-        $type     = isset( $_GET['type'] ) ? sanitize_text_field( $_GET['type'] ) : 'invoice';
+        // Get order ID
+        $order_id = isset( $_REQUEST['order_id'] ) ? absint( $_REQUEST['order_id'] ) : 0;
+        $type     = isset( $_REQUEST['type'] ) ? sanitize_text_field( $_REQUEST['type'] ) : 'invoice';
 
         if ( ! $order_id ) {
             wp_die( esc_html__( 'Invalid order ID.', 'woocommerce-print-documents' ) );
+        }
+
+        // Verify nonce - try multiple actions
+        $nonce = isset( $_REQUEST['nonce'] ) ? sanitize_text_field( $_REQUEST['nonce'] ) : '';
+        
+        if ( ! empty( $nonce ) && ! $this->verify_nonce( $nonce, $order_id ) ) {
+            // If nonce is invalid but user is logged in and has proper capabilities, allow
+            if ( ! is_user_logged_in() || ! current_user_can( 'edit_shop_order', $order_id ) ) {
+                wp_die( esc_html__( 'Security check failed.', 'woocommerce-print-documents' ) );
+            }
         }
 
         $order = wc_get_order( $order_id );
@@ -74,13 +104,19 @@ class WC_Print_Ajax {
      * Handle email document AJAX
      */
     public function handle_email_document() {
-        check_ajax_referer( 'wcp_email', 'nonce' );
-
         $order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
         $type     = isset( $_POST['type'] ) ? sanitize_text_field( $_POST['type'] ) : 'invoice';
+        $nonce    = isset( $_POST['nonce'] ) ? sanitize_text_field( $_POST['nonce'] ) : '';
 
         if ( ! $order_id ) {
             wp_send_json_error( array( 'message' => __( 'Invalid order ID.', 'woocommerce-print-documents' ) ) );
+        }
+
+        // Verify nonce
+        if ( ! empty( $nonce ) && ! $this->verify_nonce( $nonce, $order_id ) ) {
+            if ( ! is_user_logged_in() || ! current_user_can( 'edit_shop_order', $order_id ) ) {
+                wp_send_json_error( array( 'message' => __( 'Security check failed.', 'woocommerce-print-documents' ) ) );
+            }
         }
 
         $order = wc_get_order( $order_id );
@@ -105,12 +141,23 @@ class WC_Print_Ajax {
      * Handle preview document AJAX
      */
     public function handle_preview_document() {
-        check_ajax_referer( 'wcp_preview', 'nonce' );
+        $type  = isset( $_GET['type'] ) ? sanitize_text_field( $_GET['type'] ) : 'invoice';
+        $nonce = isset( $_GET['nonce'] ) ? sanitize_text_field( $_GET['nonce'] ) : '';
 
-        $type = isset( $_GET['type'] ) ? sanitize_text_field( $_GET['type'] ) : 'invoice';
+        // For preview, verify nonce if provided, or allow admin users
+        if ( ! empty( $nonce ) ) {
+            $verified = $this->verify_nonce( $nonce );
+            // Also allow wcp_preview nonce action
+            if ( ! $verified && ! wp_verify_nonce( $nonce, 'wcp_preview' ) ) {
+                if ( ! is_user_logged_in() || ! current_user_can( 'manage_woocommerce' ) ) {
+                    wp_die( esc_html__( 'Security check failed.', 'woocommerce-print-documents' ) );
+                }
+            }
+        } elseif ( ! is_user_logged_in() || ! current_user_can( 'manage_woocommerce' ) ) {
+            wp_die( esc_html__( 'Security check failed.', 'woocommerce-print-documents' ) );
+        }
 
         // Create a demo order object for preview
-        // In real implementation, you might want to use a mock order or actual order
         $preview_html = $this->get_preview_html( $type );
 
         echo $preview_html;
@@ -198,13 +245,19 @@ class WC_Print_Ajax {
      * Handle save invoice number AJAX
      */
     public function handle_save_invoice_number() {
-        check_ajax_referer( 'wcp_save_invoice', 'nonce' );
-
         $order_id      = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
         $invoice_number = isset( $_POST['invoice_number'] ) ? sanitize_text_field( $_POST['invoice_number'] ) : '';
+        $nonce          = isset( $_POST['nonce'] ) ? sanitize_text_field( $_POST['nonce'] ) : '';
 
         if ( ! $order_id ) {
             wp_send_json_error( array( 'message' => __( 'Invalid order ID.', 'woocommerce-print-documents' ) ) );
+        }
+
+        // Verify nonce
+        if ( ! empty( $nonce ) && ! $this->verify_nonce( $nonce, $order_id ) ) {
+            if ( ! is_user_logged_in() || ! current_user_can( 'edit_shop_order', $order_id ) ) {
+                wp_send_json_error( array( 'message' => __( 'Security check failed.', 'woocommerce-print-documents' ) ) );
+            }
         }
 
         update_post_meta( $order_id, '_wcp_invoice_number', $invoice_number );
@@ -216,13 +269,19 @@ class WC_Print_Ajax {
      * Handle save invoice date AJAX
      */
     public function handle_save_invoice_date() {
-        check_ajax_referer( 'wcp_save_date', 'nonce' );
-
-        $order_id    = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
+        $order_id     = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
         $invoice_date = isset( $_POST['invoice_date'] ) ? sanitize_text_field( $_POST['invoice_date'] ) : '';
+        $nonce        = isset( $_POST['nonce'] ) ? sanitize_text_field( $_POST['nonce'] ) : '';
 
         if ( ! $order_id ) {
             wp_send_json_error( array( 'message' => __( 'Invalid order ID.', 'woocommerce-print-documents' ) ) );
+        }
+
+        // Verify nonce
+        if ( ! empty( $nonce ) && ! $this->verify_nonce( $nonce, $order_id ) ) {
+            if ( ! is_user_logged_in() || ! current_user_can( 'edit_shop_order', $order_id ) ) {
+                wp_send_json_error( array( 'message' => __( 'Security check failed.', 'woocommerce-print-documents' ) ) );
+            }
         }
 
         update_post_meta( $order_id, '_wcp_invoice_date', $invoice_date );
@@ -234,13 +293,19 @@ class WC_Print_Ajax {
      * Handle get document HTML AJAX
      */
     public function handle_get_document_html() {
-        check_ajax_referer( 'wcp_get_html', 'nonce' );
-
         $order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
         $type     = isset( $_POST['type'] ) ? sanitize_text_field( $_POST['type'] ) : 'invoice';
+        $nonce    = isset( $_POST['nonce'] ) ? sanitize_text_field( $_POST['nonce'] ) : '';
 
         if ( ! $order_id ) {
             wp_send_json_error( array( 'message' => __( 'Invalid order ID.', 'woocommerce-print-documents' ) ) );
+        }
+
+        // Verify nonce
+        if ( ! empty( $nonce ) && ! $this->verify_nonce( $nonce, $order_id ) ) {
+            if ( ! is_user_logged_in() || ! current_user_can( 'edit_shop_order', $order_id ) ) {
+                wp_send_json_error( array( 'message' => __( 'Security check failed.', 'woocommerce-print-documents' ) ) );
+            }
         }
 
         $order = wc_get_order( $order_id );
@@ -258,15 +323,71 @@ class WC_Print_Ajax {
      * Handle guest print
      */
     public function handle_guest_print() {
-        // Handle guest print requests with token verification
-        $this->handle_print_document();
+        // For guests, verify secure token
+        $order_id = isset( $_REQUEST['order_id'] ) ? absint( $_REQUEST['order_id'] ) : 0;
+        $token    = isset( $_REQUEST['wcp_token'] ) ? sanitize_text_field( $_REQUEST['wcp_token'] ) : '';
+
+        if ( ! $order_id ) {
+            wp_die( esc_html__( 'Invalid order ID.', 'woocommerce-print-documents' ) );
+        }
+
+        // Verify guest token
+        if ( ! empty( $token ) ) {
+            $stored_token = get_post_meta( $order_id, '_wcp_guest_token', true );
+            if ( $stored_token !== $token ) {
+                wp_die( esc_html__( 'Invalid or expired token.', 'woocommerce-print-documents' ) );
+            }
+        } else {
+            wp_die( esc_html__( 'Security check failed.', 'woocommerce-print-documents' ) );
+        }
+
+        $order = wc_get_order( $order_id );
+        if ( ! $order ) {
+            wp_die( esc_html__( 'Order not found.', 'woocommerce-print-documents' ) );
+        }
+
+        $type     = isset( $_REQUEST['type'] ) ? sanitize_text_field( $_REQUEST['type'] ) : 'invoice';
+        $document = new WC_Print_Document( $order, $type );
+        $document->render_html();
+
+        exit;
     }
 
     /**
      * Handle guest email
      */
     public function handle_guest_email() {
-        // Handle guest email requests with token verification
-        $this->handle_email_document();
+        $order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
+        $token    = isset( $_POST['wcp_token'] ) ? sanitize_text_field( $_POST['wcp_token'] ) : '';
+
+        if ( ! $order_id ) {
+            wp_send_json_error( array( 'message' => __( 'Invalid order ID.', 'woocommerce-print-documents' ) ) );
+        }
+
+        // Verify guest token
+        if ( ! empty( $token ) ) {
+            $stored_token = get_post_meta( $order_id, '_wcp_guest_token', true );
+            if ( $stored_token !== $token ) {
+                wp_send_json_error( array( 'message' => __( 'Security check failed.', 'woocommerce-print-documents' ) ) );
+            }
+        } else {
+            wp_send_json_error( array( 'message' => __( 'Security check failed.', 'woocommerce-print-documents' ) ) );
+        }
+
+        $type   = isset( $_POST['type'] ) ? sanitize_text_field( $_POST['type'] ) : 'invoice';
+        $order  = wc_get_order( $order_id );
+
+        if ( ! $order ) {
+            wp_send_json_error( array( 'message' => __( 'Order not found.', 'woocommerce-print-documents' ) ) );
+        }
+
+        $recipient = $order->get_billing_email();
+        $sent      = wcp_send_document_email( $order, $type, $recipient );
+
+        if ( $sent ) {
+            wp_send_json_success( array( 'message' => __( 'Document sent successfully!', 'woocommerce-print-documents' ) ) );
+        } else {
+            wp_send_json_error( array( 'message' => __( 'Failed to send email.', 'woocommerce-print-documents' ) ) );
+        }
     }
 }

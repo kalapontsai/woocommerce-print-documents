@@ -194,7 +194,7 @@ class WC_Print_Document {
                 'name'        => $item->get_name(),
                 'quantity'    => $item->get_quantity(),
                 'total'       => $item->get_total(),
-                'price'       => $product ? wc_get_price_excluding_html( $product ) : 0,
+                'price'       => $product ? ( function_exists( 'wc_get_price_excluding_html' ) ? wc_get_price_excluding_html( $product ) : $product->get_price() ) : 0,
                 'sku'         => $product ? $product->get_sku() : '',
                 'image_id'    => $product ? $product->get_image_id() : 0,
             );
