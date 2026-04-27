@@ -95,7 +95,7 @@ class WC_Print_Ajax {
         $document = new WC_Print_Document( $order, $type );
 
         // Output document
-        $document->render_html();
+        echo $document->render_html();
 
         exit;
     }
