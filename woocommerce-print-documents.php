@@ -126,24 +126,22 @@ final class WC_Print_Documents {
      * Plugin activation
      */
     public function activate() {
-        // Set default options
+        // Force update default options (works for fresh install and re-activation)
         $default_options = array(
             'wcp_documents' => array(
-                'invoice'   => array( 'active' => true, 'title' => 'Invoice' ),
-                'receipt'   => array( 'active' => true, 'title' => 'Receipt' ),
-                'delivery'  => array( 'active' => true, 'title' => 'Delivery Note' ),
-                'packing'   => array( 'active' => true, 'title' => 'Packing Slip' ),
-                'credit'    => array( 'active' => false, 'title' => 'Credit Note' ),
+                'invoice'   => array( 'active' => 'yes', 'title' => 'Invoice' ),
+                'receipt'   => array( 'active' => 'yes', 'title' => 'Receipt' ),
+                'delivery'  => array( 'active' => 'yes', 'title' => 'Delivery Note' ),
+                'packing'   => array( 'active' => 'yes', 'title' => 'Packing Slip' ),
+                'credit'    => array( 'active' => 'no',  'title' => 'Credit Note' ),
             ),
-            'wcp_invoice_start' => 1,
-            'wcp_shop_name'    => get_bloginfo( 'name' ),
-            'wcp_sanitize'    => true,
+            'wcp_invoice_start'   => 1,
+            'wcp_shop_name'       => get_bloginfo( 'name' ),
+            'wcp_sanitize'        => true,
         );
 
         foreach ( $default_options as $key => $value ) {
-            if ( false === get_option( $key ) ) {
-                add_option( $key, $value );
-            }
+            update_option( $key, $value );
         }
 
         // Create upload directory
