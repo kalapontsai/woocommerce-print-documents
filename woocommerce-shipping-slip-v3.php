@@ -82,7 +82,7 @@ function wssv3_print(){
 
  // 雙欄抬頭
  echo '<div class="header">';
- echo '<div class="header-left">艾沙順勢糖球</div>';
+ echo '<div class="header-left">XXXX</div>';
  echo '<div class="header-right">';
  echo '<h2>Packing Slip</h2>';
  echo '<p>Invoice #: ' . $invoice_num . '</p>';
