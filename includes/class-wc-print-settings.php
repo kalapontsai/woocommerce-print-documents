@@ -317,11 +317,7 @@ class WC_Print_Settings {
         }
 
         $documents = get_option( 'wcp_documents', array(
-            'invoice' => array( 'active' => true, 'title' => 'Invoice' ),
-            'receipt' => array( 'active' => true, 'title' => 'Receipt' ),
-            'delivery' => array( 'active' => true, 'title' => 'Delivery Note' ),
-            'packing' => array( 'active' => true, 'title' => 'Packing Slip' ),
-            'credit' => array( 'active' => false, 'title' => 'Credit Note' ),
+            'packing' => array( 'active' => 'yes', 'title' => 'Packing Slip' ),
         ) );
         ?>
         <div class="wrap">
