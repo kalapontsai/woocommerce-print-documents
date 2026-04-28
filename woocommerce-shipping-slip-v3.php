@@ -2,7 +2,7 @@
 /*
 Plugin Name: WooCommerce Shipping Slip V3
 Description: Simple shipping slip print button for WooCommerce HPOS/new order page.
-Version: 3.7
+Version: 3.6
 */
 if(!defined('ABSPATH')) exit;
 
@@ -45,11 +45,9 @@ function wssv3_print(){
  $email = $order->get_billing_email();
  $phone = $order->get_billing_phone();
 
- // 金額計算 - 使用 WooCommerce 的正確方法
+ // 金額計算
  $total_discount = $order->get_discount_total() + $order->get_discount_tax(); // 折扣金額
  $grand_total = $order->get_total(); // 顧客實付
- // 原始小計 = 實付 + 折扣
- $subtotal_excl_discount = $grand_total + $total_discount;
 
  // 取得商品項目
  $items = $order->get_items();
@@ -113,14 +111,17 @@ function wssv3_print(){
  echo '</tr></thead>';
  echo '<tbody>';
 
+ $calc_subtotal = 0; // 計算原始小計
+
  foreach($items as $item){
    $product = $item->get_product();
    $product_name = $item->get_name();
    $sku = $product ? $product->get_sku() : '';
    $qty = $item->get_quantity();
-   // PRICE 和 TOTAL 都顯示折扣後的金額
-   $line_total = $item->get_total(); // 折扣後小計
-   $unit_price = $qty > 0 ? $line_total / $qty : 0; // 折扣後單價
+   // PRICE 和 TOTAL 都顯示未折扣的金額
+   $unit_price = $product ? $product->get_price() : 0; // 原始單價
+   $line_total = $qty * $unit_price; // 原始小計
+   $calc_subtotal += $line_total;
 
    echo '<tr>';
    echo '<td><span class="product-name">'.$product_name.'</span></td>';
@@ -137,7 +138,7 @@ function wssv3_print(){
  // 總計區
  echo '<div class="footer">';
  echo '<div class="total-box">';
- echo '<div class="row"><span>Subtotal:</span><span>NT$'.$subtotal_excl_discount.'</span></div>';
+ echo '<div class="row"><span>Subtotal:</span><span>NT$'.$calc_subtotal.'</span></div>';
  if($total_discount > 0){
    echo '<div class="row discount-row"><span>Discount:</span><span>-NT$'.$total_discount.'</span></div>';
  }
