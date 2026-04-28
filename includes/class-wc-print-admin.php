@@ -251,8 +251,8 @@ class WC_Print_Admin {
             return;
         }
 
-        $invoice_number = get_post_meta( $order->get_id(), '_wcp_invoice_number', true );
-        $invoice_date   = get_post_meta( $order->get_id(), '_wcp_invoice_date', true );
+        $invoice_number = $order->get_meta( '_wcp_invoice_number' );
+        $invoice_date   = $order->get_meta( '_wcp_invoice_date' );
 
         ?>
         <div class="wcp-order-actions">

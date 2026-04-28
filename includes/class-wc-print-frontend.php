@@ -119,8 +119,11 @@ class WC_Print_Frontend {
 
         // Check for guest token (secure token for guest access)
         if ( ! is_user_logged_in() && ! empty( $token ) ) {
-            // Validate guest token
-            $stored_token = get_post_meta( $order_id, '_wcp_guest_token', true );
+            $order = wc_get_order( $order_id );
+            if ( ! $order ) {
+                wp_die( esc_html__( 'Order not found.', 'woocommerce-print-documents' ) );
+            }
+            $stored_token = $order->get_meta( '_wcp_guest_token' );
             if ( $stored_token !== $token ) {
                 wp_die( esc_html__( 'Invalid or expired token.', 'woocommerce-print-documents' ) );
             }
@@ -193,7 +196,7 @@ class WC_Print_Frontend {
 
         $documents = get_option( 'wcp_documents', array() );
         $documents_enabled = array_filter( $documents, function( $doc ) {
-            return isset( $doc['active'] ) && 'yes' === $doc['active'];
+            return isset( $doc['active'] ) && $doc['active'];
         } );
 
         if ( empty( $documents_enabled ) ) {
@@ -239,7 +242,11 @@ class WC_Print_Frontend {
      */
     public static function generate_guest_token( $order_id ) {
         $token = wp_hash( $order_id . '_' . time() . '_guest' );
-        update_post_meta( $order_id, '_wcp_guest_token', $token );
+        $order = wc_get_order( $order_id );
+        if ( $order ) {
+            $order->update_meta_data( '_wcp_guest_token', $token );
+            $order->save();
+        }
         return $token;
     }
 
@@ -247,8 +254,8 @@ class WC_Print_Frontend {
      * Get guest print URL
      */
     public static function get_guest_print_url( $order, $type ) {
-        $token = get_post_meta( $order->get_id(), '_wcp_guest_token', true );
-        
+        $token = $order->get_meta( '_wcp_guest_token' );
+
         if ( ! $token ) {
             $token = self::generate_guest_token( $order->get_id() );
         }

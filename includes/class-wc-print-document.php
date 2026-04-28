@@ -53,7 +53,7 @@ class WC_Print_Document {
         $order_id = $this->order->get_id();
         
         // Get stored invoice number or generate new one
-        $invoice_number = get_post_meta( $order_id, '_wcp_invoice_number', true );
+        $invoice_number = $this->order->get_meta( '_wcp_invoice_number' );
         
         if ( ! $invoice_number ) {
             $reset_yearly = get_option( 'wcp_invoice_reset_yearly', 'no' );
@@ -80,7 +80,8 @@ class WC_Print_Document {
             $invoice_number = $this->generate_invoice_number( $next_number );
             
             // Store and increment
-            update_post_meta( $order_id, '_wcp_invoice_number', $invoice_number );
+            $this->order->update_meta_data( '_wcp_invoice_number', $invoice_number );
+            $this->order->save();
             
             $next_number++;
             if ( 'yes' === $reset_yearly ) {
@@ -120,11 +121,12 @@ class WC_Print_Document {
      * Get invoice date
      */
     public function get_invoice_date() {
-        $date = get_post_meta( $this->order->get_id(), '_wcp_invoice_date', true );
-        
+        $date = $this->order->get_meta( '_wcp_invoice_date' );
+
         if ( ! $date ) {
             $date = $this->order->get_date_created()->format( 'Y-m-d H:i:s' );
-            update_post_meta( $this->order->get_id(), '_wcp_invoice_date', $date );
+            $this->order->update_meta_data( '_wcp_invoice_date', $date );
+            $this->order->save();
         }
         
         return apply_filters( 'wcp_invoice_date', $date, $this->order );
@@ -417,7 +419,8 @@ class WC_Print_Document {
         $result = file_put_contents( $filepath, $pdf_content );
         
         if ( $result ) {
-            update_post_meta( $this->order->get_id(), '_wcp_pdf_' . $this->document_type, $filepath );
+            $this->order->update_meta_data( '_wcp_pdf_' . $this->document_type, $filepath );
+            $this->order->save();
             return $filepath;
         }
         
@@ -428,7 +431,7 @@ class WC_Print_Document {
      * Get saved PDF path
      */
     public function get_saved_pdf_path() {
-        return get_post_meta( $this->order->get_id(), '_wcp_pdf_' . $this->document_type, true );
+        return $this->order->get_meta( '_wcp_pdf_' . $this->document_type );
     }
 
     /**
