@@ -2,7 +2,7 @@
 /*
 Plugin Name: WooCommerce Shipping Slip V3
 Description: Simple shipping slip print button for WooCommerce HPOS/new order page.
-Version: 3.4
+Version: 3.7
 */
 if(!defined('ABSPATH')) exit;
 
@@ -33,7 +33,6 @@ function wssv3_print(){
  // 取得資料
  $order_id = $order->get_id();
  $date_created = $order->get_date_created()->date('Y-m-d');
- $date_created_full = $order->get_date_created()->date('Y-m-d H:i');
 
  // Invoice # = 2026040002 格式：YYYYMMDD + 訂單ID（不足4位補0）
  $invoice_num = date('Ymd', strtotime($date_created)) . str_pad($order_id, 4, '0', STR_PAD_LEFT);
@@ -46,8 +45,11 @@ function wssv3_print(){
  $email = $order->get_billing_email();
  $phone = $order->get_billing_phone();
 
- // 金額計算
- $subtotal = $order->get_subtotal_to_display();
+ // 金額計算 - 使用 WooCommerce 的正確方法
+ $total_discount = $order->get_discount_total() + $order->get_discount_tax(); // 折扣金額
+ $grand_total = $order->get_total(); // 顧客實付
+ // 原始小計 = 實付 + 折扣
+ $subtotal_excl_discount = $grand_total + $total_discount;
 
  // 取得商品項目
  $items = $order->get_items();
@@ -67,15 +69,14 @@ function wssv3_print(){
  th{background:#555;color:#fff;padding:8px 6px;text-align:left;font-size:12px;font-weight:bold}
  td{background:#fff;padding:6px;border-bottom:1px solid #eee;vertical-align:middle;font-size:12px}
  tr:nth-child(even) td{background:#f5f5f5}
- .product-cell{display:flex;align-items:center;gap:10px}
- .product-thumb{width:50px;height:50px;object-fit:cover;border:1px solid #ddd}
  .product-name{font-size:12px}
  .sku-cell{color:#888;font-size:11px}
  .qty-cell,.price-cell,.total-cell{text-align:right}
  .price-cell,.total-cell{white-space:nowrap}
  .footer{display:flex;justify-content:flex-end;border-top:2px solid #333;padding-top:15px}
  .total-box{text-align:right}
- .total-box .subtotal-row{display:flex;justify-content:flex-end;gap:40px;margin-bottom:5px;font-size:13px}
+ .total-box .row{display:flex;justify-content:flex-end;gap:40px;margin-bottom:5px;font-size:13px}
+ .total-box .discount-row{color:#c00}
  .total-box .grand-total{font-size:16px;font-weight:bold;margin-top:8px}
  .customer-note{margin-top:20px;font-size:12px;color:#555}
  </style>';
@@ -117,27 +118,16 @@ function wssv3_print(){
    $product_name = $item->get_name();
    $sku = $product ? $product->get_sku() : '';
    $qty = $item->get_quantity();
-   $price = $item->get_subtotal() / $qty;
-   $total = $item->get_subtotal();
-
-   // 商品圖片
-   $thumb_html = '';
-   if($product){
-     $thumb_id = $product->get_image_id();
-     if($thumb_id){
-       $thumb_url = wp_get_attachment_image_url($thumb_id, array(50,50));
-       if($thumb_url){
-         $thumb_html = '<img class="product-thumb" src="'.$thumb_url.'" alt="">';
-       }
-     }
-   }
+   // PRICE 和 TOTAL 都顯示折扣後的金額
+   $line_total = $item->get_total(); // 折扣後小計
+   $unit_price = $qty > 0 ? $line_total / $qty : 0; // 折扣後單價
 
    echo '<tr>';
-   echo '<td><div class="product-cell">'.$thumb_html.'<span class="product-name">'.$product_name.'</span></div></td>';
+   echo '<td><span class="product-name">'.$product_name.'</span></td>';
    echo '<td class="sku-cell">'.$sku.'</td>';
    echo '<td class="qty-cell">'.$qty.'</td>';
-   echo '<td class="price-cell">NT$'.$price.'</td>';
-   echo '<td class="total-cell">NT$'.$total.'</td>';
+   echo '<td class="price-cell">NT$'.$unit_price.'</td>';
+   echo '<td class="total-cell">NT$'.$line_total.'</td>';
    echo '</tr>';
  }
 
@@ -147,8 +137,11 @@ function wssv3_print(){
  // 總計區
  echo '<div class="footer">';
  echo '<div class="total-box">';
- echo '<div class="subtotal-row"><span>Subtotal:</span><span>NT$'.$subtotal.'</span></div>';
- echo '<div class="grand-total">Packing Slip Total: NT$'.$subtotal.'</div>';
+ echo '<div class="row"><span>Subtotal:</span><span>NT$'.$subtotal_excl_discount.'</span></div>';
+ if($total_discount > 0){
+   echo '<div class="row discount-row"><span>Discount:</span><span>-NT$'.$total_discount.'</span></div>';
+ }
+ echo '<div class="grand-total">Packing Slip Total: NT$'.$grand_total.'</div>';
  echo '</div>';
  echo '</div>';
 
