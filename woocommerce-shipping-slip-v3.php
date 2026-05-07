@@ -17,7 +17,7 @@ add_action('woocommerce_order_actions_start', function($order_id){
  $nonce = wp_create_nonce('wssv3');
  $url = admin_url('admin-ajax.php?action=wssv3_print&order_id='.$order_id.'&_wpnonce='.$nonce);
  echo '<li>';
- echo '<a href="'.$url.'" class="wssv3-print-btn" target="_blank" style="display:inline-block;padding:6px 12px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;text-decoration:none;color:#555;font-size:13px;margin-top:5px;">';
+ echo '<a href="'.$url.'" class="wssv3-print-btn" target="_blank" style="display:inline-block;padding:6px 12px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;text-decoration:none;color:#555">';
  echo '列印出貨單';
  echo '</a>';
  echo '</li>';
@@ -56,7 +56,9 @@ function wssv3_print(){
  echo '<style>
  body{font-family:sans-serif;padding:20px;font-size:13px;color:#333}
  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #333;padding-bottom:15px;margin-bottom:20px}
- .header-left{font-size:24px;font-weight:bold}
+ .header-left{display:flex;flex-direction:column;justify-content:flex-start}
+ .company-name{font-size:24px;font-weight:bold;margin-bottom:8px}
+ .company-subtitle{font-size:12px;color:#555;line-height:1.5}
  .header-right{text-align:right}
  .header-right h2{margin:0 0 8px 0;font-size:20px}
  .header-right p{margin:3px 0;font-size:12px;color:#555}
@@ -82,7 +84,10 @@ function wssv3_print(){
 
  // 雙欄抬頭
  echo '<div class="header">';
- echo '<div class="header-left">XXXX</div>';
+ echo '<div class="header-left">';
+ echo '<div class="company-name">艾沙順勢糖球</div>';
+ echo '<div class="company-subtitle">E-mail：service@elhomeo.com<br>Official Line Id:@826qhmpu</div>';
+ echo '</div>';
  echo '<div class="header-right">';
  echo '<h2>Packing Slip</h2>';
  echo '<p>Invoice #: ' . $invoice_num . '</p>';
