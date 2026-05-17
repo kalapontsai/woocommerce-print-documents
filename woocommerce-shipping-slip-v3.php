@@ -47,7 +47,10 @@ function wssv3_print(){
 
  // 金額計算
  $total_discount = $order->get_discount_total() + $order->get_discount_tax(); // 折扣金額
- $grand_total = $order->get_total(); // 顧客實付
+ $shipping_total = $order->get_shipping_total() + $order->get_shipping_tax(); // 運費總額
+ $total_refunded = $order->get_total_refunded(); // 已退款金額
+ $order_total = $order->get_total(); // 訂單總額
+ $grand_total = $order_total - $total_refunded; // 顧客最終實付淨額
 
  // 取得商品項目
  $items = $order->get_items();
@@ -140,13 +143,29 @@ function wssv3_print(){
  echo '</tbody>';
  echo '</table>';
 
- // 總計區
+// 總計區
  echo '<div class="footer">';
  echo '<div class="total-box">';
+ 
+ // 小計
  echo '<div class="row"><span>Subtotal:</span><span>NT$'.$calc_subtotal.'</span></div>';
+ 
+ // 折扣
  if($total_discount > 0){
    echo '<div class="row discount-row"><span>Discount:</span><span>-NT$'.$total_discount.'</span></div>';
  }
+ 
+ // 運費 (如果有運費則顯示)
+ if($shipping_total > 0){
+   echo '<div class="row"><span>Shipping:</span><span>NT$'.$shipping_total.'</span></div>';
+ }
+ 
+ // 退款 (如果有退款則顯示)
+ if($total_refunded > 0){
+   echo '<div class="row discount-row"><span>Refunded:</span><span>-NT$'.$total_refunded.'</span></div>';
+ }
+ 
+ // 最終實付總額
  echo '<div class="grand-total">Packing Slip Total: NT$'.$grand_total.'</div>';
  echo '</div>';
  echo '</div>';
