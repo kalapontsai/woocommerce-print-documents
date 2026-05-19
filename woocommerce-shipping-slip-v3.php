@@ -2,7 +2,7 @@
 /*
 Plugin Name: WooCommerce Shipping Slip V3
 Description: Simple shipping slip print button for WooCommerce HPOS/new order page.
-Version: 3.6
+Version: 3.7
 */
 if(!defined('ABSPATH')) exit;
 
@@ -49,8 +49,8 @@ function wssv3_print(){
  $total_discount = $order->get_discount_total() + $order->get_discount_tax(); // 折扣金額
  $shipping_total = $order->get_shipping_total() + $order->get_shipping_tax(); // 運費總額
  $total_refunded = $order->get_total_refunded(); // 已退款金額
- $order_total = $order->get_total(); // 訂單總額
- $grand_total = $order_total - $total_refunded; // 顧客最終實付淨額
+ // WooCommerce 的 get_total() 已自動內含商品、折扣、運費與手續費，故只需扣除退款即為最終實付
+ $grand_total    = $order->get_total() - $total_refunded;
 
  // 取得商品項目
  $items = $order->get_items();
@@ -148,25 +148,34 @@ function wssv3_print(){
  echo '<div class="total-box">';
  
  // 小計
- echo '<div class="row"><span>Subtotal:</span><span>NT$'.$calc_subtotal.'</span></div>';
+ echo '<div class="row"><span>小計:</span><span>NT$'.$calc_subtotal.'</span></div>';
  
  // 折扣
  if($total_discount > 0){
-   echo '<div class="row discount-row"><span>Discount:</span><span>-NT$'.$total_discount.'</span></div>';
+   echo '<div class="row discount-row"><span>折扣:</span><span>-NT$'.$total_discount.'</span></div>';
  }
  
- // 運費 (如果有運費則顯示)
+ // 額外費用 (自動動態抓取名稱，例如：貨到付款手續費)
+ $fees = $order->get_fees();
+ if(!empty($fees)){
+   foreach($fees as $fee){
+     // $fee->get_name() 會取得「貨到付款手續費」，$fee->get_total() 取得金額
+     echo '<div class="row"><span>' . esc_html($fee->get_name()) . ':</span><span>NT$' . $fee->get_total() . '</span></div>';
+   }
+ }
+ 
+ // 運費 (大於0時才顯示)
  if($shipping_total > 0){
-   echo '<div class="row"><span>Shipping:</span><span>NT$'.$shipping_total.'</span></div>';
+   echo '<div class="row"><span>運費:</span><span>NT$'.$shipping_total.'</span></div>';
  }
  
  // 退款 (如果有退款則顯示)
  if($total_refunded > 0){
-   echo '<div class="row discount-row"><span>Refunded:</span><span>-NT$'.$total_refunded.'</span></div>';
+   echo '<div class="row discount-row"><span>退款:</span><span>-NT$'.$total_refunded.'</span></div>';
  }
  
  // 最終實付總額
- echo '<div class="grand-total">Packing Slip Total: NT$'.$grand_total.'</div>';
+ echo '<div class="grand-total">實付總額: NT$'.$grand_total.'</div>';
  echo '</div>';
  echo '</div>';
 
@@ -174,7 +183,7 @@ function wssv3_print(){
  $customer_note = $order->get_customer_note();
  if($customer_note){
    echo '<div class="customer-note">';
-   echo '<strong>Customer Note:</strong> ' . esc_html($customer_note);
+   echo '<strong>客戶備註:</strong> ' . esc_html($customer_note);
    echo '</div>';
  }
 
